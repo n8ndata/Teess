@@ -604,9 +604,9 @@ async function handleLogin(e) {
   } catch (error) {
     console.error('Login failed:', error);
 
-    // แสดงข้อความ错误
+    // แปลง Error Code ของ Firebase เป็นข้อความไทยที่บอกวิธีแก้
     const authError = document.getElementById('authError');
-    authError.textContent = error.message || 'เข้าสู่ระบบไม่สำเร็จ กรุณาตรวจสอบข้อมูลให้ถูกต้อง';
+    authError.textContent = friendlyAuthError(error);
     authError.classList.add('visible');
 
     // คืนค่าปุ่ม
@@ -614,6 +614,44 @@ async function handleLogin(e) {
     loginBtn.textContent = originalText;
     loginBtn.disabled = false;
   }
+}
+
+// แปลง Firebase Auth error เป็นข้อความไทย + วิธีแก้
+function friendlyAuthError(error) {
+  'use strict';
+  const code = (error && error.code) || '';
+  const host = (location && location.host) || 'โดเมนปัจจุบัน';
+
+  const MESSAGES = {
+    // ===== สาเหตุที่พบบ่อยที่สุด "เมื่อขึ้นออนไลน์" =====
+    'auth/unauthorized-domain':
+      'โดเมน "' + host + '" ยังไม่ได้ลงทะเบียนใน Firebase ' +
+      '(วิธีแก้: Firebase Console → Authentication → Settings → Authorized domains → Add domain → ใส่ "' + host + '" → Save)',
+    'auth/operation-not-allowed':
+      'ยังไม่ได้เปิดใช้งาน Email/Password (วิธีแก้: Firebase Console → Authentication → Sign-in method → Email/Password → Enable)',
+    'auth/configuration-not-found':
+      'Firebase Authentication ยังไม่ถูกตั้งค่าในโปรเจกต์ (วิธีแก้: เปิดใช้งาน provider อย่างน้อยหนึ่งตัวใน Sign-in method ก่อน)',
+
+    // ===== ข้อมูลล็อกอินไม่ถูกต้อง =====
+    'auth/invalid-email': 'รูปแบบอีเมลไม่ถูกต้อง — กรอกอีเมลเต็ม เช่น name@gmail.com',
+    'auth/user-not-found': 'ไม่พบบัญชีนี้ในระบบ — ต้องสร้างผู้ใช้ที่ Authentication → Users ก่อน',
+    'auth/wrong-password': 'รหัสผ่านไม่ถูกต้อง กรุณาลองอีกครั้ง',
+    'auth/invalid-credential': 'อีเมลหรือรหัสผ่านไม่ถูกต้อง',
+    'auth/invalid-login-credentials': 'อีเมลหรือรหัสผ่านไม่ถูกต้อง',
+    'auth/user-disabled': 'บัญชีนี้ถูกระงับการใช้งาน',
+
+    // ===== ปัญหาการเชื่อมต่อ =====
+    'auth/network-request-failed': 'เชื่อมต่อ Firebase ไม่ได้ — ตรวจสอบอินเทอร์เน็ตแล้วลองใหม่',
+    'auth/too-many-requests': 'พยายามหลายครั้งเกินไป กรุณารอ 1-2 นาทีแล้วลองใหม่',
+    'auth/internal-error': 'เกิดข้อผิดพลาดภายในของ Firebase กรุณาลองใหม่ภายหลัง',
+    'auth/api-key-not-valid': 'Firebase API Key ไม่ถูกต้องหรือถูกจำกัดโดเมน (ตรวจสอบการตั้งค่า API Key ใน Google Cloud Console)',
+    'auth/app-not-authorized': 'โดเมนนี้ไม่ได้รับอนุญาตให้ใช้ API Key นี้ (วิธีแก้: เพิ่มโดเมนใน Authorized domains หรือปรับ API restrictions)'
+  };
+
+  if (MESSAGES[code]) return MESSAGES[code] + ' [' + code + ']';
+
+  // Error อื่น ๆ: แสดงข้อความเดิมถ้ามี
+  return (error && error.message) || 'เข้าสู่ระบบไม่สำเร็จ กรุณาตรวจสอบข้อมูลให้ถูกต้อง';
 }
 
 // ฟังก์ชันสำหรับการล็อกอัพ
